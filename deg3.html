@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <select id="mod" onchange="changeMod()">
+        <option value="SepalLength">SepalLength</option>
+        <option value="SepalWidth">SepalWidth</option>
+        <option value="PetalLength">PetalLength</option>
+        <option value="PetalWidth">PetalWidth</option>
+    </select>
+
+    <div data-role="sizeslider">
+        <label for="size_slider">Value:</label>
+        <input name="size_slider" id="size_slider" oninput="SlideValue(this.value)" type="range" min="4.3" max="7.9" value="4.3" step="0.1">
+        <input name="size_num" id="size_num" type="number" oninput="SlideValue(this.value)" min="4.3" max="7.9" value="4.3" step="0.1">
+    </div>
+    <div class="container"></div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/d3-color.v1.min.js"></script>
+    <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <!--<script src="https://unpkg.com/@saehrimnir/druidjs"></script>-->
+
+    <script>
+        var data = new Array();
+        var data2 = new Array();
+        var classes1 = new Array();
+        var classes2 = new Array();
+        var xCategory = new Array();
+        var sLen = new Array();
+        var sWd = new Array();
+        var pLen = new Array();
+        var pWd = new Array();
+        var spes = new Array();
+        var sLen_min, sLen_max, sWd_min, sWd_max, pLen_min, pLen_max, pWd_min, pWd_max;
+        var sLen_avg, sWd_avg, pLen_avg, pWd_avg;
+        var shape_size = 30;
+        var W = 500;
+
+        var state = false;
+        var shape = d3.scaleOrdinal(d3.symbols.map(s => d3.symbol().size(shape_size).type(s)()))
+        var color = d3.scaleOrdinal()
+            .domain(["setosa", "versicolor", "virginica"])
+            .range(["#fc916d", "#98f376", "#78a8f6"])
+            //setosa : red       versi : green     virgin : blue
+
+        function SlideValue(val) { //slide value change event
+            var view = document.getElementById("size_slider");
+            var box = document.getElementById("size_num");
+            var resp = new Array();
+            box.value = val;
+            view.value = val;
+            opa = val;
+            shape_size = val;
+            //opactiy = d3.scaleOrdinal(d3.symbols.mgap(s => d3.symbol().opacity().type(s)()))
+            if (state == true) {
+                let svg = d3.select("body").select('svg');
+                let gs = svg.selectAll(".point").selectAll("path").attr("d", (d, i) => shape([classes2[i]]));
+            }
+            if (mod.value == 'SepalLength') {
+                for (var m1 = 0; m1 < c1.length; m1++) {
+                    if (sLen[m1] < val) {
+                        c1[m1].style.opacity = 0;
+                    } else {
+                        c1[m1].style.opacity = 1;
+                    }
+                }
+            }
+            if (mod.value == 'SepalWidth') {
+                for (var m1 = 0; m1 < c1.length; m1++) {
+                    if (sWd[m1] < val) {
+                        c1[m1].style.opacity = 0;
+                    } else {
+                        c1[m1].style.opacity = 1;
+                    }
+                }
+            }
+            if (mod.value == 'PetalLength') {
+                for (var m1 = 0; m1 < c1.length; m1++) {
+                    if (pLen[m1] < val) {
+                        c1[m1].style.opacity = 0;
+                    } else {
+                        c1[m1].style.opacity = 1;
+                    }
+                }
+            }
+            if (mod.value == 'PetalWidth') {
+                for (var m1 = 0; m1 < c1.length; m1++) {
+                    if (pWd[m1] < val) {
+                        c1[m1].style.opacity = 0;
+                    } else {
+                        c1[m1].style.opacity = 1;
+                    }
+                }
+            }
+        }
+
+        function get_parm() {
+            return new Array();
+        }
+
+        function wait(t) {
+            return new Promise(resolve => setTimeout(resolve, t))
+        }
+
+        d3.json("https://raw.githubusercontent.com/sangyeop910/iris/main/iris(150).json")
+            .then(result => {
+                const attrs = Object.keys(result[0]).filter(a => {
+                    return (typeof result[0][a] === "number") && !(new Set(["name", "class", "label", "Species", "island"])).has(a)
+                });
+
+                data = result;
+                data2 = result.map(d => attrs.map((a, i) => d[a]));
+                classes1 = result.map(d => d.Species);
+                data2 = data2.slice(0, data2.length - 1);
+                var headerLine = "";
+                for (var n0 = 0; n0 < classes1.length; n0++) {
+                    if (classes1[n0] == "setosa") {
+                        xCategory[n0] = 5;
+                    }
+                    if (classes1[n0] == "versicolor") {
+                        xCategory[n0] = 25;
+                    }
+                    if (classes1[n0] == "virginica") {
+                        xCategory[n0] = 45;
+                    }
+                }
+
+                for (var n1 = 0; n1 < data2.length; n1++) {
+                    sLen.push(data2[n1][0]);
+                } //sepal Length array
+                sLen_min = Math.min.apply(null, sLen);
+                sLen_max = Math.max.apply(null, sLen);
+                //sLen_avg = (sLen.reduce((a, b) => a + b)) / sLen.length;
+                //sLen_avg = sLen_avg.toFixed(1);
+
+                for (var n2 = 0; n2 < data2.length; n2++) {
+                    sWd.push(data2[n2][1]);
+                } //sepal width array
+                sWd_min = Math.min.apply(null, sWd);
+                sWd_max = Math.max.apply(null, sWd);
+                //sWd_avg = (sWd.reduce((a, b) => a + b)) / sWd.length;
+                //sWd_avg = sWd_avg.toFixed(1);
+
+                for (var n3 = 0; n3 < data2.length; n3++) {
+                    pLen.push(data2[n3][2]);
+                } //petal length array
+                pLen_min = Math.min.apply(null, pLen);
+                pLen_max = Math.max.apply(null, pLen);
+                //pLen_avg = (pLen.reduce((a, b) => a + b)) / pLen.length;
+                //pLen_avg = pLen_avg.toFixed(1);
+
+                for (var n4 = 0; n4 < data2.length; n4++) {
+                    pWd.push(data2[n4][3]);
+                } //petal width array
+                pWd_min = Math.min.apply(null, pWd);
+                pWd_max = Math.max.apply(null, pWd);
+                //pWd_avg = (pWd.reduce((a, b) => a + b)) / pWd.length;
+                //pWd_avg = pWd_avg.toFixed(1);
+
+                var mod = document.getElementById("mod");
+
+                draw(sLen);
+                state = true;
+            }).catch(e => {
+                console.log(e)
+            });
+
+        function draw(q) {
+            var tickLabels = ['setosa', 'versicolor', 'virginica'];
+            let svg = d3.select("body")
+                .append("svg")
+                .attr("width", W)
+                .attr("viewBox", [0, 0, W, W]);
+
+            var x = d3.scaleLinear()
+                .domain([0, 45])
+                .range([0, 300]);
+
+            var xAxis = d3.axisBottom().ticks(5)
+                .tickValues([5, 25, 45])
+                .tickFormat((d, i) => tickLabels[i])
+                .scale(x);
+
+            var y = d3.scaleLinear()
+                .domain([0, 10])
+                .range([420, 50]);
+
+            var yAxis = d3.axisBottom().ticks(10)
+                .scale(y);
+
+            let gs = svg.selectAll(".point")
+                .data(data2)
+                .enter()
+                .append("g")
+                .append("circle")
+                .attr("id", "c1")
+                .attr("class", "point")
+                .attr("fill", "none")
+                .attr("stroke", (d, i) => color(classes1[i]))
+                .attr("cx", (d, i) => x(xCategory[i]))
+                .attr("cy", (d, i) => y(q[i]))
+                .attr("r", 6);
+
+            svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + 430 + ")")
+                .call(xAxis);
+
+            /*var point = svg.selectAll(".point")
+                .data(data2)
+                
+                .attr("transform", (([px, py], i) => `translate(${x(px)}, ${y(py)})`));*/
+
+            return q = 0;
+        }
+
+        function changeMod() { //option에 따른 onchange event 처리
+            if (state == true) {
+                var mod = document.getElementById("mod"); //.options[document.getElementById("mod").selectedIndex].value;
+
+                if (mod.value == 'SepalLength') {
+                    d3.select("svg").remove();
+                    size_slider.min = sLen_min;
+                    size_slider.max = sLen_max;
+                    size_slider.value = sLen_min;
+                    size_num.min = sLen_min;
+                    size_num.max = sLen_max;
+                    size_num.value = sLen_min;
+                    draw(sLen);
+                }
+                if (mod.value == 'SepalWidth') {
+                    d3.select("svg").remove();
+                    size_slider.min = sWd_min;
+                    size_slider.max = sWd_max;
+                    size_slider.value = sWd_min;
+                    size_num.min = sWd_min;
+                    size_num.max = sWd_max;
+                    size_num.value = sWd_min;
+                    draw(sWd);
+                }
+                if (mod.value == 'PetalLength') {
+                    d3.select("svg").remove();
+                    size_slider.min = pLen_min;
+                    size_slider.max = pLen_max;
+                    size_slider.value = pLen_min;
+                    size_num.min = pLen_min;
+                    size_num.max = pLen_max;
+                    size_num.value = pLen_min;
+                    draw(pLen);
+                }
+                if (mod.value == 'PetalWidth') {
+                    d3.select("svg").remove();
+                    size_slider.min = pWd_min;
+                    size_slider.max = pWd_max;
+                    size_slider.value = pWd_min;
+                    size_num.min = pWd_min;
+                    size_num.max = pWd_max;
+                    size_num.value = pWd_min;
+                    draw(pWd);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

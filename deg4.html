@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<meta charset="utf-8">
+
+<body>
+    <select id="mod" onchange="changeMod()">
+        <option value="SepalData">SepalData</option>
+        <option value="PetalData">PetalData</option>
+    </select>
+
+    <div data-role="sizeslider">
+        <label for="size_slider">Value:</label>
+        <input name="size_slider" id="size_slider" oninput="SlideValue(this.value)" type="range" min="2" max="4.5" value="2" step="0.1">
+        <input name="size_num" id="size_num" type="number" oninput="SlideValue(this.value)" min="2" max="4.5" value="2" step="0.1">
+    </div>
+    <div class="container"></div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/d3-color.v1.min.js"></script>
+    <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <script>
+        var data = new Array();
+        var data2 = new Array();
+        var classes1 = new Array();
+        var classes2 = new Array();
+        var sLen = new Array();
+        var sWd = new Array();
+        var pLen = new Array();
+        var pWd = new Array();
+        var shape_size = 30;
+        var W = 700;
+        var margin = {
+                top: 10,
+                right: 30,
+                bottom: 30,
+                left: 60
+            },
+            width = 700 - margin.left - margin.right,
+            height = 700 - margin.top - margin.bottom;
+        var state = false;
+
+        function SlideValue(val) { //slide value change event
+            var view = document.getElementById("size_slider");
+            var box = document.getElementById("size_num");
+            box.value = val;
+            view.value = val;
+
+            if (mod.value == 'SepalData') {
+                for (var m1 = 0; m1 < c1.length; m1++) {
+                    if (sWd[m1] < val) {
+                        c1[m1].style.opacity = 0;
+                    } else {
+                        c1[m1].style.opacity = 1;
+                    }
+                }
+            }
+            if (mod.value == 'PetalData') {
+                for (var m2 = 0; m2 < c1.length; m2++) {
+                    if (pWd[m2] < val) {
+                        c1[m2].style.opacity = 0;
+                    } else {
+                        c1[m2].style.opacity = 1;
+                    }
+                }
+            }
+        }
+
+        function get_parm() {
+            return new Array();
+        }
+
+        function wait(t) {
+            return new Promise(resolve => setTimeout(resolve, t))
+        }
+
+        d3.json("https://raw.githubusercontent.com/sangyeop910/iris/main/iris(150).json")
+            .then(result => {
+                const attrs = Object.keys(result[0]).filter(a => {
+                    return (typeof result[0][a] === "number") && !(new Set(["name", "class", "label", "Species", "island"])).has(a)
+                });
+
+                data = result;
+                data2 = result.map(d => attrs.map((a, i) => d[a]));
+                classes1 = result.map(d => d[0]);
+                data2 = data2.slice(0, data2.length - 1);
+                var headerLine = "";
+
+                for (var n1 = 0; n1 < data2.length; n1++) {
+                    sLen.push(data2[n1][0]);
+                }
+
+                for (var n2 = 0; n2 < data2.length; n2++) {
+                    sWd.push(data2[n2][1]);
+                }
+
+                for (var n3 = 0; n3 < data2.length; n3++) {
+                    pLen.push(data2[n3][2]);
+                }
+
+                for (var n4 = 0; n4 < data2.length; n4++) {
+                    pWd.push(data2[n4][3]);
+                }
+                draw(sWd, sLen);
+
+                var mod = document.getElementById("mod");
+                state = true;
+
+            }).catch(e => {
+                console.log(e)
+            });
+
+        function draw(q, p) {
+            let svg = d3.select("body")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .attr("viewBox", [0, 0, W, W])
+                .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+
+            var x = d3.scaleLinear()
+                .domain([0, 5])
+                .range([0, width]);
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            var y = d3.scaleLinear()
+                .domain([0, 8])
+                .range([height, 0]);
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            let gs = svg.selectAll(".point")
+                .data(data2)
+                .enter()
+                .append("g")
+                .append("circle")
+                .attr("id", "c1")
+                .attr("class", "point")
+                .attr("fill", "none")
+                .attr("stroke", "#78a8f6")
+                .style("stroke-width", 2)
+                .attr("cx", (d, i) => x(q[i]))
+                .attr("cy", (d, i) => y(p[i]))
+                .attr("r", 5);
+        }
+
+        function changeMod() { //option에 따른 onchange event 처리
+            if (state == true) {
+                var mod = document.getElementById("mod"); //.options[document.getElementById("mod").selectedIndex].value;
+
+                if (mod.value == 'SepalData') {
+                    d3.select("svg").remove();
+                    size_slider.min = 2;
+                    size_slider.max = 4.5;
+                    size_slider.value = 2;
+                    size_num.min = 2;
+                    size_num.max = 4.5;
+                    size_num.value = 2;
+                    draw(sWd, sLen);
+                }
+                if (mod.value == 'PetalData') {
+                    d3.select("svg").remove();
+                    size_slider.min = 0;
+                    size_slider.max = 2.6;
+                    size_slider.value = 0;
+                    size_num.min = 0;
+                    size_num.max = 2.6;
+                    size_num.value = 0;
+                    draw(pWd, pLen);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

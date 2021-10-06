@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <div data-role="sizeslider">
+        <label for="size_slider">Value:</label>
+        <input name="size_slider" id="size_slider" oninput="SlideValue(this.value)" type="range" min="500" max="3000" value="500" step="5">
+        <input name="size_num" id="size_num" type="number" oninput="SlideValue(this.value)" min="500" max="3000" value="500" step="5">
+    </div>
+    <div class="container"></div>
+    <script type="text/javascript" src="dataset.json"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/d3-color.v1.min.js"></script>
+    <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+    <script>
+        var data = new Array();
+        var data2 = new Array();
+        var classes1 = new Array();
+        var classes2 = new Array();
+        var xd = new Array();
+        var yd = new Array();
+        var xmin, xmax;
+        var shape_size = 30;
+        var W = 500;
+        var margin = {
+                top: 10,
+                right: 30,
+                bottom: 30,
+                left: 60
+            },
+            width = 460 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
+        var state = false;
+        var shape = d3.scaleOrdinal(d3.symbols.map(s => d3.symbol().size(shape_size).type(s)()))
+
+        function SlideValue(val) { //slide value change event
+            var view = document.getElementById("size_slider");
+            var box = document.getElementById("size_num");
+            var resp = new Array();
+            box.value = val;
+            view.value = val;
+            opa = val;
+            shape_size = val;
+            if (state == true) {
+                let svg = d3.select("body").select('svg');
+                let gs = svg.selectAll(".point").selectAll("path").attr("d", (d, i) => shape([classes2[i]]));
+            }
+
+            for (var m1 = 0; m1 < c1.length; m1++) {
+                if (xd[m1] < val) {
+                    c1[m1].style.opacity = 0;
+                } else {
+                    c1[m1].style.opacity = 1;
+                }
+            }
+
+        }
+
+        function get_parm() {
+            return new Array();
+        }
+
+        function wait(t) {
+            return new Promise(resolve => setTimeout(resolve, t))
+        }
+
+        d3.json("dataset.json")
+            .then(result => {
+                const attrs = Object.keys(result[0]).filter(a => {
+                    return (typeof result[0][a] === "number") && !(new Set(["name", "class", "label", "Species", "island"])).has(a)
+                });
+
+                data = result;
+                data2 = result.map(d => attrs.map((a, i) => d[a]));
+                data2 = data2.slice(0, data2.length - 1);
+                var headerLine = "";
+
+                for (var n1 = 0; n1 < data2.length; n1++) {
+                    xd.push(data2[n1][0]);
+                }
+                xmin = Math.min.apply(null, xd);
+                xmax = Math.max.apply(null, xd);
+
+                for (var n2 = 0; n2 < data2.length; n2++) {
+                    yd.push(data2[n2][1]);
+                }
+                ymin = Math.min.apply(null, yd);
+                ymax = Math.max.apply(null, yd);
+
+                var mod = document.getElementById("mod");
+
+                draw(xd);
+                state = true;
+            }).catch(e => {
+                console.log(e)
+            });
+
+        function draw(q) {
+            let svg = d3.select("body")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .attr("viewBox", [0, 0, W, W])
+                .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+
+            var x = d3.scaleLinear()
+                .domain([0, 3000])
+                .range([0, width]);
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            var y = d3.scaleLinear()
+                .domain([0, 4000])
+                .range([height, 0]);
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            let gs = svg.selectAll(".point")
+                .data(data2)
+                .enter()
+                .append("g")
+                .append("circle")
+                .attr("id", "c1")
+                .attr("class", "point")
+                .attr("fill", "none")
+                .attr("stroke", "#78a8f6")
+                .attr("cx", (d, i) => x(xd[i]))
+                .attr("cy", (d, i) => y(yd[i]))
+                .attr("r", 3);
+
+
+        }
+
+        /*function changeMod() { //option에 따른 onchange event 처리
+            if (state == true) {
+                var mod = document.getElementById("mod"); //.options[document.getElementById("mod").selectedIndex].value;
+            }
+        }*/
+    </script>
+</body>
+
+</html>
